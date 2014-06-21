@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Classification Model of Exercise Movement Using Random Forests</title>
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 12px;
+   margin: 8px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 { 
+   font-size:2.2em; 
+}
+
+h2 { 
+   font-size:1.8em; 
+}
+
+h3 { 
+   font-size:1.4em; 
+}
+
+h4 { 
+   font-size:1.0em; 
+}
+
+h5 { 
+   font-size:0.9em; 
+}
+
+h6 { 
+   font-size:0.8em; 
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre {	
+   margin-top: 0;
+   max-width: 95%;
+   border: 1px solid #ccc;
+   white-space: pre-wrap;
+}
+
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code.r, code.cpp {
+   background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * { 
+      background: transparent !important; 
+      color: black !important; 
+      filter:none !important; 
+      -ms-filter: none !important; 
+   }
+
+   body { 
+      font-size:12pt; 
+      max-width:100%; 
+   }
+       
+   a, a:visited { 
+      text-decoration: underline; 
+   }
+
+   hr { 
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote { 
+      padding-right: 1em; 
+      page-break-inside: avoid; 
+   }
+
+   tr, img { 
+      page-break-inside: avoid; 
+   }
+
+   img { 
+      max-width: 100% !important; 
+   }
+
+   @page :left { 
+      margin: 15mm 20mm 15mm 10mm; 
+   }
+     
+   @page :right { 
+      margin: 15mm 10mm 15mm 20mm; 
+   }
+
+   p, h2, h3 { 
+      orphans: 3; widows: 3; 
+   }
+
+   h2, h3 { 
+      page-break-after: avoid; 
+   }
+}
+
+</style>
+
+
+
+
+
+</head>
+
+<body>
+<h1>Classification Model of Exercise Movement Using Random Forests</h1>
+
+<h3>Executive Summary</h3>
+
+<p>In an effort to properly classify quality of exercises performed, multiple machine learning algorithms were built and evaluated.  The model that produces the best out of sample accuracy results is one utilizing random forests.  This accomplishes an cross-validated accuracy rate of .9741 (see confusion matrix below).  This is in contrast to approaches utilizing decision trees where accuracy rates were below .60.  Due to the non linear nature of the response and predictor variables linear models were not investigated nor were preprocessing procedures.</p>
+
+<p>Some data cleaning and exploratory analysis was performed to eliminate non-informative variables.  Importantly the original data set was sampled to yield a smaller one that facilitated model construction times without sacrificing significant model accuracy rates.
+The final dataset used to train and test the models comporised of 54 predictor variable.</p>
+
+<p>Cross validating was used to validate the model and estimate the out-of-sample performance.  This consisted of .70 (training) and .30 (validation).</p>
+
+<p>train.raw = read.csv(file=&ldquo;train.csv&rdquo;, na.string=c(&ldquo;NA&rdquo;, &ldquo;&rdquo;)
+dim(train.raw)</p>
+
+<h3>reduce the size to facilitate analysis and model creation time</h3>
+
+<p>sampIndx = sample(nrow(train.raw), 4000);
+train.small = train.raw[sampIndx,]</p>
+
+<h3>clean the dataset of missing and NA values</h3>
+
+<p>NArm = apply(train.small, 2, function(x) {sum(is.na(x))});
+train.sm.valid = train.small[,which(NArm == 0)]</p>
+
+<h3>remove noisy and nor information variables</h3>
+
+<p>rmIndex &lt;- grep(&ldquo;timestamp|X|user_name|new_window&rdquo;,names(train.sm.valid));
+train.sm.valid = train.sm.valid[,-rmIndex]</p>
+
+<h3>split dataset into train and validation sets</h3>
+
+<p>inTrain = createDataPartition(y=train.sm.valid$classe, p=0.7, list=FALSE);
+TRAIN = train.sm.valid[inTrain,];
+VALIDATE = train.sm.valid[-inTrain,]</p>
+
+<h3>exploratory, confirm the size of the datasets</h3>
+
+<p>dim(TRAIN);
+dim(VALIDATE)</p>
+
+<h3>4 level cross-validation to expedite model construction</h3>
+
+<p>trControl=trainControl(method=&ldquo;cv&rdquo;, number=4, allowParallel=TRUE)</p>
+
+<h3>train model using random forest algorithm</h3>
+
+<p>randForMod = train(classe ~ ., method=&ldquo;rf&rdquo;, data=TRAIN, trControl=trControl);
+PREDS = predict(randForMod, VALIDATE)</p>
+
+<h3>estimate out of sample accuracy using the validation set</h3>
+
+<p>confusionMatrix(PREDS, VALIDATE$classe)</p>
+
+<h2>Out of Sample Validation Results</h2>
+
+<p>Confusion Matrix and Statistics</p>
+
+<pre><code>      Reference
+</code></pre>
+
+<p>Prediction   A   B   C   D   E
+         A 336   5   0   0   0
+         B   0 214   4   0   2
+         C   0   8 208   7   0
+         D   0   0   1 188   4
+         E   0   0   0   0 221</p>
+
+<p>Overall Statistics</p>
+
+<pre><code>           Accuracy : 0.9741          
+             95% CI : (0.9635, 0.9824)
+No Information Rate : 0.2805          
+P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
+
+              Kappa : 0.9673          
+</code></pre>
+
+<p>Mcnemar&#39;s Test P-Value : NA              </p>
+
+<p>Statistics by Class:</p>
+
+<pre><code>                 Class: A Class: B Class: C Class: D Class: E
+</code></pre>
+
+<p>Sensitivity            1.0000   0.9427   0.9765   0.9641   0.9736
+Specificity            0.9942   0.9938   0.9848   0.9950   1.0000
+Pos Pred Value         0.9853   0.9727   0.9327   0.9741   1.0000
+Neg Pred Value         1.0000   0.9867   0.9949   0.9930   0.9939
+Prevalence             0.2805   0.1895   0.1778   0.1628   0.1895
+Detection Rate         0.2805   0.1786   0.1736   0.1569   0.1845
+Detection Prevalence   0.2846   0.1836   0.1861   0.1611   0.1845
+Balanced Accuracy      0.9971   0.9683   0.9806   0.9796   0.9868</p>
+
+</body>
+
+</html>
+
