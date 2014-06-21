@@ -1,0 +1,38 @@
+Title
+========================================================
+
+train.raw = read.csv(file="train.csv", na.string=c("NA", "")
+dim(train.raw)
+
+sampIndx = sample(nrow(train.raw), 4000)
+train.small = train.raw[sampIndx,]
+
+NArm = apply(train.small, 2, function(x) {sum(is.na(x))})
+train.sm.valid = train.small[,which(NArm == 0)]
+
+inTrain = createDataPartition(y=train.sm.valid$classe, p=0.7, list=FALSE)
+TRAIN = train.sm.valid[inTrain,]
+VALIDATE = train.sm.valid[-inTrain,]
+
+dim(TRAIN)
+dim(VALIDATE)
+
+randForMod = train(classe ~ ., method="rf", data=TRAIN, trControl=trainControl(method="cv", number=4, allowParallel=TRUE))
+
+PREDS = predict(randForMod, VALIDATE)
+confusionMatrix(PREDS, VALIDATE$classe)
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring web pages (click the **Help** toolbar button for more details on using R Markdown).
+
+When you click the **Knit HTML** button a web page will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+summary(cars)
+```
+
+You can also embed plots, for example:
+
+```{r fig.width=7, fig.height=6}
+plot(cars)
+```
+
