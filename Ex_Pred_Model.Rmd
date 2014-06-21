@@ -1,38 +1,58 @@
-Title
+Classification Model of Exercise Movement Using Random Forests
 ========================================================
-
+```{r}
 train.raw = read.csv(file="train.csv", na.string=c("NA", "")
 dim(train.raw)
+```
 
+### reduce the size to facilitate analysis and model creation time
+```{r}
 sampIndx = sample(nrow(train.raw), 4000)
 train.small = train.raw[sampIndx,]
+```
 
+### clean the dataset of missing and NA values
+```{r}
 NArm = apply(train.small, 2, function(x) {sum(is.na(x))})
 train.sm.valid = train.small[,which(NArm == 0)]
+```
 
+### remove noisy and nor information variables
+```{r}
+rmIndex <- grep("timestamp|X|user_name|new_window",names(train.sm.valid))
+train.sm.valid = train.sm.valid[,-rmIndex]
+```
+
+# split dataset into train and validation sets
+```{r}
 inTrain = createDataPartition(y=train.sm.valid$classe, p=0.7, list=FALSE)
 TRAIN = train.sm.valid[inTrain,]
 VALIDATE = train.sm.valid[-inTrain,]
+```
 
+# exploratory, confirm the size of the datasets
+```{r}
 dim(TRAIN)
 dim(VALIDATE)
+```
 
-randForMod = train(classe ~ ., method="rf", data=TRAIN, trControl=trainControl(method="cv", number=4, allowParallel=TRUE))
+# 4 level cross-validation to expedite model construction
+```{r}
+trControl=trainControl(method="cv", number=4, allowParallel=TRUE)
+```
+
+# train model using random forest algorithm
+```{r}
+randForMod = train(classe ~ ., method="rf", data=TRAIN, trControl)
 
 PREDS = predict(randForMod, VALIDATE)
-confusionMatrix(PREDS, VALIDATE$classe)
+```
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring web pages (click the **Help** toolbar button for more details on using R Markdown).
-
-When you click the **Knit HTML** button a web page will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
+# estimate out of sample accuracy using the validation set
 ```{r}
-summary(cars)
+confusionMatrix(PREDS, VALIDATE$classe)
 ```
 
-You can also embed plots, for example:
 
-```{r fig.width=7, fig.height=6}
-plot(cars)
-```
+
 
